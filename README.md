@@ -2,9 +2,18 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
+## CSCI3100 Project
 
-In the project directory, you can run:
+This is CSCI3100 software engineering project.
+
+
+
+
+
+
+
+
+
 
 ### `npm start`
 
