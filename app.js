@@ -31,6 +31,7 @@ mongoose.connect(process.env.DB_URL,{useNewUrlParser:true, useUnifiedTopology:tr
 app.engine('hbs',engine({defaultLayout:'layout',extname:'.hbs',layoutsDir:'views/layouts',partialsDir:'views/partials',handlebars: allowInsecurePrototypeAccess(Handlebars)}));
 
 
+
 app.get('/users/login', (req, res) => {
   res.render('user/login', {layout: 'login'}) 
 })

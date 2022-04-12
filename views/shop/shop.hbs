@@ -1,34 +1,50 @@
-
 <div class="row">
-   {{#each data}}
-    <form action="/shop" method="post"></form>
 
-    <div class="col-sm-4 col-md-4 col-lg-4">
-            <div class="thumbnail">
-            <img src="{{this.imagePath}}" alt="..." class="img-responsive">
-            <div class="word">
-                <div class="caption">
-                <h5>  {{this.title}}</h5>
-                <p class="Author">Author: {{this.Author}}</p>
-                <p class="Owner">Owner: {{this.Owner}}</p>
-                <p class="description">{{this.description}}</p>
+  {{#each data}}
 
 
-                </div>
-    
-                <div class="clearfix">
-                    <div class="price pull-left">${{this.price}}</div>
-                    <a  class="btn btn-success pull-right" role="button">Button</a>
-                </div>
-               
-            </div>
-           
+  <div class="col-sm-4 col-md-4 col-lg-4">
+    <div class="thumbnail">
+      <img src="images/{{this.imagePath}}" alt="..." class="img-responsive">
+      <div class="word">
+        <div class="caption">
+          <h5> {{this.title}}</h5>
+          <form action="/user/Author" method="POST">
+            <button type="submit" value={{this.Author}} name="name"
+              style="border-style:none ;background-color:transparent">
+              <p class="Author">Author: {{this.Author}}</p>
+            </button>
+
+          </form>
+
+          <form action="/user/Owner" method="POST">
+            <button type="submit" value={{this.Owner}} name="name"
+              style="border-style:none ;background-color:transparent">
+              <p class="Owner">Owner: {{this.Owner}}</p>
+            </button>
+
+          </form>
+
+          <p class="description">{{this.description}}</p>
+
 
         </div>
+
+        <div class="clearfix">
+          <div class="price pull-left">${{this.price}}</div>
+          <form action="/shop" method="post">
+
+            <button style="float:right"type="submit" value={{this.imagePath}} name="item">Button</button>
+          </form>
+
+        </div>
+
+      </div>
+
+
     </div>
+  </div>
+
   {{/each}}
 
 </div>
-
-    
-

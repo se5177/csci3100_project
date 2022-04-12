@@ -1,2 +1,66 @@
-{{{data}}}
-<div>dufhsdfhisd</div>
+     
+<div style="color:red">{{{error}}}</div>
+    
+   
+
+
+<style>
+    .split {
+        margin: 20px;
+    height: 60%;
+  width: 50%;
+  position: fixed;
+  z-index: 1;
+  overflow-x: hidden;
+  padding-top: 20px;
+}
+
+/* Control the left side */
+.left {
+  left: 0;
+  background-color: #111;
+}
+
+/* Control the right side */
+.right {
+  right: 0;
+  background-color: red;
+}
+
+/* If you want the content centered horizontally and vertically */
+.centered {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+/* Style the image inside the centered container, if needed */
+.centered img {
+  width: 95%;
+}
+    
+</style>
+
+<div class="split left">
+  <div class="centered">
+    <img src= "images/{{data.imagePath}}" alt="Avatar woman">
+
+  </div>
+</div>
+
+<div class="split right">
+  <div class="centered">
+    <h2>{{data.title}}</h2>
+    <p>description: {{data.description}}</p>
+
+    <p>price: {{data.price}}</p>
+            <a href="/shop"><button type="submit"   name="back">back</button></a>
+        <form method="post" action="/itempage">
+
+        <button type="submit" value ="hii" name="item">buy</button>
+        </form>
+
+  </div>
+</div>
