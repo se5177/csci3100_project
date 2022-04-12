@@ -13,7 +13,7 @@ const passwordSchema = Joi.object({
   Conpassword: Joi.any().valid(Joi.ref('NewPassword')).required()
 
 });
-
+const mailer = require('../misc/mailer');
 //new
 const multer = require("multer");
 //new
@@ -73,6 +73,19 @@ router.get('/shop', async (req, res, next) => {
 
 });
 
+
+// Added the home page for the main site before login
+router.get('/', async (req, res, next) => {
+  console.log('homepage');
+  res.render('user/homepage', { layout: 'login' })
+
+});
+//----------------------------------------------------
+
+
+
+
+
 router.post('/shop', function (req, res) {
 
   temp = req.body.item;
@@ -119,11 +132,11 @@ router.post('/itempage', async (req, res) => {
             console.log("done: ", Updated_product);
             res.redirect('/shop');
           } else {
-            res.render('shop/item', { data: productsData,money:  temp_User.Money, error: "Not Enough Money!!" });
+            res.render('shop/item', { data: productsData, money: temp_User.Money, error: "Not Enough Money!!" });
           }
 
         } else {
-          res.render('shop/item', { data: productsData,money:  temp_User.Money, error: "You are the Owner!" });
+          res.render('shop/item', { data: productsData, money: temp_User.Money, error: "You are the Owner!" });
         }
 
 
@@ -192,7 +205,7 @@ router.get('/user', async (req, res, next) => {
       if (err) {
         console.log(err);
         return;
-      } 
+      }
       else {
 
         mongoose.model('products').find({ Owner: Users_Result[0].Name }, function (err, Result) {
@@ -242,7 +255,7 @@ router.post('/admin/user', async (req, res, next) => {
                 return;
               } else {
                 console.log(User_Result)
-                res.render('user/profile', { layout:"adminlayout",money: User_Result.Money, data: Users_Result, data2: Result });
+                res.render('user/profile', { layout: "adminlayout", money: User_Result.Money, data: Users_Result, data2: Result });
               }
             });
           }
@@ -267,7 +280,7 @@ router.get("/user/setting", async (req, res) => {
 
     console.log("image is loading");
     console.log(data);
-    
+
     res.render('user/usersetting', { records: data })
   })
 });
@@ -281,36 +294,36 @@ router.post("/user/setting", async (req, res) => {
       console.log(err);
       return res.end("Something went wrong");
     } else {
-      if(req.file!= null){
+      if (req.file != null) {
         console.log(req.file.path);
-      var imageName = req.file.filename;
+        var imageName = req.file.filename;
 
-      var imageDetails = new imageModel({
-        imagename: imageName,
+        var imageDetails = new imageModel({
+          imagename: imageName,
 
-      });
+        });
 
-      imageDetails.save(function (err, doc) {
-        if (err) throw err;
-
-        console.log("Image Saved");
-
-        imageModel.find({}).exec(function (err, data) {
+        imageDetails.save(function (err, doc) {
           if (err) throw err;
 
-          
-          var Updated_User = Schema.user.findOneAndUpdate({ email: User_data.loginEmail }, { $set: { UserIMG: req.file.filename } }, async (err, Result) => {
+          console.log("Image Saved");
+
+          imageModel.find({}).exec(function (err, data) {
             if (err) throw err;
 
-            console.log(Updated_User)
-          });
-          res.render('user/usersetting', { money:User_data.Money,records: data, success: true });
-        })
-      });
-      }else{
-        res.render('user/usersetting', { money:User_data.Money,result: true });
+
+            var Updated_User = Schema.user.findOneAndUpdate({ email: User_data.loginEmail }, { $set: { UserIMG: req.file.filename } }, async (err, Result) => {
+              if (err) throw err;
+
+              console.log(Updated_User)
+            });
+            res.render('user/usersetting', { money: User_data.Money, records: data, success: true });
+          })
+        });
+      } else {
+        res.render('user/usersetting', { money: User_data.Money, result: true });
       }
-      }
+    }
   });
 });
 
@@ -327,127 +340,161 @@ router.post("/admin/listalluser", async (req, res) => {
 
 
 
-  router.post("/admin/resetpassword", async (req, res) => {
+// Newly added admin reset password funcitonality
 
-    console.log(req.body.email)
-  
-    mongoose.model('user').findOne({ email: req.body.email }, function (err, Users_Result) {
-  
+router.post('/admin/resetpassword', async (req, res) => {
+  console.log(req.body.email);
+
+  mongoose
+    .model('user')
+    .findOne({ email: req.body.email }, async (err, Users_Result) => {
+      console.log(Users_Result);
       if (err) {
         console.log(err);
         return res.redirect('/admin/resetpassword');
       } else {
-        console.log(Users_Result)
         if (Users_Result == null) {
-          console.log("User not found")
-          res.render('user/adminresetpassword', { layout: 'adminlayout', error: "User not found" });
-        }
-  
-      }
-    })
-  
-  })
+          console.log('User not found');
+          res.render('user/adminresetpassword', {
+            layout: 'adminlayout',
+            error: 'User not found',
+          });
+        } else {
+          var newPassword =
+            Math.random().toString(36).slice(2) +
+            Math.random().toString(36).toUpperCase().slice(2);
 
-  
-  router.post('/user/Author', async (req, res, next) => {
-    console.log(req.body.name)
-    let usersResult = await user.findOne({ Name: req.body.name }).exec((err, userData) => {
-      console.log(userData)
-      mongoose.model('user').findOne({ email: userData.email }, function (err, Users_Result) {
-        if (err) {
-          console.log(err);
-          return;
-        }
-        else {
-  
-          mongoose.model('products').find({ Owner: Users_Result.Name }, function (err, Result) {
-            if (err) {
-              console.log(err)
-              return;
-            }
-            else {
-              mongoose.model('user').findOne({ Name: req.body.name }, function (err, User_Result) {
-                if (err) {
-                  console.log(err);
-                  return;
-                } else {
-                  console.log(User_Result)
-                  mongoose.model('user').findOne({ email: User_data.loginEmail }, function (err, result) {
-                    if (result.Name == req.body.name) {
-                      res.render('user/profile', { money: result.Money, data: Users_Result, data2: Result, check: true });
-                    }
-                    else {
-                      res.render('user/profile', { money: result.Money, data: Users_Result, data2: Result });
-                    }
-                  })
-                }
-              });
-            }
+          const message = `Hi there,<br/> Your Password has been changed <br/> Password: <b>${newPassword}</b>`;
+          console.log(Users_Result.email);
+
+          await mailer.sendEmail(
+            '1155137891@link.cuhk.edu.hk',
+            Users_Result.email,
+            'Your password has been updated',
+            message
+          );
+
+          const hash = await Schema.hashPassword(newPassword);
+          Users_Result.password = hash;
+          var updateUser = await Schema.user.findOne({
+            email: Users_Result.email,
           });
-        }
-      });
-  
-  
-    });
-  
-  
-  
-  
-  
-  })
-  
-  
-  
-  router.post('/user/Owner', async (req, res, next) => {
-    console.log(req.body.name)
-    let usersResult = await user.findOne({ Name: req.body.name }).exec((err, userData) => {
-      mongoose.model('user').findOne({ email: userData.email }, function (err, Users_Result) {
-        if (err) {
-          console.log(err);
-          return;
-        }
-        else {
-  
-          mongoose.model('products').find({ Owner: Users_Result.Name }, function (err, Result) {
-            if (err) {
-              console.log(err)
-              return;
-            }
-            else {
-              mongoose.model('user').findOne({ Name: req.body.name }, function (err, User_Result) {
-                if (err) {
-                  console.log(err);
-                  return;
-                } else {
-                  console.log(User_Result)
-                  mongoose.model('user').findOne({ email: User_data.loginEmail }, function (err, result) {
-  
-                    if (result.Name == req.body.name) {
-  
-                      res.render('user/profile', { money: result.Money, data: Users_Result, data2: Result, check: true });
-                    }
-                    else {
-                      res.render('user/profile', { money: result.Money, data: Users_Result, data2: Result });
-                    }
-                  })
-                }
-              });
-            }
+
+          updateUser.password = hash;
+          await updateUser.save();
+
+          res.render('user/adminresetpassword', {
+            success: true,
+            layout: 'adminlayout',
           });
+
+          console.log(newPassword);
+          console.log(hash);
         }
-      });
-  
-  
+      }
     });
-  
-  
-  
-  
-  })
+});
+// -------------------------------------------------------------------------------
+
+router.post('/user/Author', async (req, res, next) => {
+  console.log(req.body.name)
+  let usersResult = await user.findOne({ Name: req.body.name }).exec((err, userData) => {
+    console.log(userData)
+    mongoose.model('user').findOne({ email: userData.email }, function (err, Users_Result) {
+      if (err) {
+        console.log(err);
+        return;
+      }
+      else {
+
+        mongoose.model('products').find({ Owner: Users_Result.Name }, function (err, Result) {
+          if (err) {
+            console.log(err)
+            return;
+          }
+          else {
+            mongoose.model('user').findOne({ Name: req.body.name }, function (err, User_Result) {
+              if (err) {
+                console.log(err);
+                return;
+              } else {
+                console.log(User_Result)
+                mongoose.model('user').findOne({ email: User_data.loginEmail }, function (err, result) {
+                  if (result.Name == req.body.name) {
+                    res.render('user/profile', { money: result.Money, data: Users_Result, data2: Result, check: true });
+                  }
+                  else {
+                    res.render('user/profile', { money: result.Money, data: Users_Result, data2: Result });
+                  }
+                })
+              }
+            });
+          }
+        });
+      }
+    });
+
+
+  });
+
+
+
+
+
+})
+
+
+
+router.post('/user/Owner', async (req, res, next) => {
+  console.log(req.body.name)
+  let usersResult = await user.findOne({ Name: req.body.name }).exec((err, userData) => {
+    mongoose.model('user').findOne({ email: userData.email }, function (err, Users_Result) {
+      if (err) {
+        console.log(err);
+        return;
+      }
+      else {
+
+        mongoose.model('products').find({ Owner: Users_Result.Name }, function (err, Result) {
+          if (err) {
+            console.log(err)
+            return;
+          }
+          else {
+            mongoose.model('user').findOne({ Name: req.body.name }, function (err, User_Result) {
+              if (err) {
+                console.log(err);
+                return;
+              } else {
+                console.log(User_Result)
+                mongoose.model('user').findOne({ email: User_data.loginEmail }, function (err, result) {
+
+                  if (result.Name == req.body.name) {
+
+                    res.render('user/profile', { money: result.Money, data: Users_Result, data2: Result, check: true });
+                  }
+                  else {
+                    res.render('user/profile', { money: result.Money, data: Users_Result, data2: Result });
+                  }
+                })
+              }
+            });
+          }
+        });
+      }
+    });
+
+
+  });
+
+
+
+
+})
 
 //change PW
 
-router.get("/user/changepw",async(req,res)=>{
+router.get("/user/changepw", async (req, res) => {
   mongoose.model('user').findOne({ email: User_data.loginEmail }, function (err, Users_Result) {
     if (err) {
       console.log(err);
@@ -455,7 +502,7 @@ router.get("/user/changepw",async(req,res)=>{
     }
     else {
       console.log(Users_Result.Money);
-  res.render('user/PWsetting',{money:Users_Result.Money});
+      res.render('user/PWsetting', { money: Users_Result.Money });
     }
   });
 });
@@ -463,7 +510,7 @@ router.get("/user/changepw",async(req,res)=>{
 
 
 
-router.get("/uploadItem",function(req,res){
+router.get("/uploadItem", function (req, res) {
   mongoose.model('user').findOne({ email: User_data.loginEmail }, function (err, Users_Result) {
     if (err) {
       console.log(err);
@@ -471,9 +518,51 @@ router.get("/uploadItem",function(req,res){
     }
     else {
       console.log(Users_Result.Money);
-  res.render('shop/uploadItem',{money:Users_Result.Money});
+      res.render('shop/uploadItem', { money: Users_Result.Money });
     }
+  });
 });
+
+
+
+
+
+
+router.post("/uploadItem", async (req, res) => {
+
+  console.log("check", req.body);
+
+
+  upload(req, res, function (err) {
+    if (err) {
+      console.log(err);
+      return res.end("Something went wrong");
+    } else {
+      if (req.file != null) {
+        console.log(req.file.path);
+        var imageName = req.file.filename;
+
+        var imageDetails = new imageModel({
+          imagename: imageName,
+        });
+
+        imageDetails.save(function (err, doc) {
+          if (err) throw err;
+
+          console.log("Image Saved");
+
+          imageModel.find({}).exec(function (err, data) {
+            if (err) throw err;
+
+
+            res.render('shop/uploadItem', { img: req.file.filename, success: true });
+          })
+        });
+      } else {
+        res.render('shop/uploadItem', { result: true });
+      }
+    }
+  });
 });
 
 
@@ -481,83 +570,41 @@ router.get("/uploadItem",function(req,res){
 
 
 
-router.post("/uploadItem",async(req,res)=>{
-
-console.log("check",req.body);
 
 
-upload(req, res, function (err) {
-  if (err) {
-    console.log(err);
-    return res.end("Something went wrong");
+
+router.post("/confirmed", function (req, res) {
+
+  console.log("show", req.body);
+  console.log("showd", typeof (req.body.item));
+
+  if (req.body.item == null || req.body.title == '' || req.body.description == '' || req.body.price == '') {
+    res.render("shop/uploadItem", { error: "Please filled every blocks!" });
   } else {
-    if(req.file!= null){
-      console.log(req.file.path);
-    var imageName = req.file.filename;
-
-    var imageDetails = new imageModel({
-      imagename: imageName,
-    });
-
-    imageDetails.save(function (err, doc) {
-      if (err) throw err;
-
-      console.log("Image Saved");
-
-      imageModel.find({}).exec(function (err, data) {
-        if (err) throw err;
-   
-        
-        res.render('shop/uploadItem', { img:req.file.filename,success: true });
-      })
-    });
-    }else{
-      res.render('shop/uploadItem', { result: true });
-    }
-    }
-});
-});
-
-
-
-
-
-
-
-
-
-router.post("/confirmed",function(req,res){
-  
-  console.log("show",req.body);
-  console.log("showd",typeof(req.body.item));
-  
-  if(req.body.item==null||req.body.title=='' || req.body.description==''||req.body.price==''){
-     res.render("shop/uploadItem",{error:"Please filled every blocks!"});
-  }else{
     mongoose.model('user').findOne({ email: User_data.loginEmail }, function (err, Users_Result) {
       if (err) {
         console.log(err);
         return;
-      } 
+      }
       else {
 
-    var Updated_product = new Schema.products;
-    Updated_product.title = req.body.title;
-    Updated_product.description = req.body.description;
-    Updated_product.price = req.body.price;
-    Updated_product.Owner = Users_Result.Name;
-    Updated_product.Author = Users_Result.Name;
-    Updated_product.imagePath = req.body.item;
-    console.log("check",Updated_product);
-    Updated_product.save();
-    res.redirect('/shop');
-  }
+        var Updated_product = new Schema.products;
+        Updated_product.title = req.body.title;
+        Updated_product.description = req.body.description;
+        Updated_product.price = req.body.price;
+        Updated_product.Owner = Users_Result.Name;
+        Updated_product.Author = Users_Result.Name;
+        Updated_product.imagePath = req.body.item;
+        console.log("check", Updated_product);
+        Updated_product.save();
+        res.redirect('/shop');
+      }
 
-});
+    });
   }
 });
 
-  
+
 
 
 
@@ -572,13 +619,13 @@ router.post("/confirmed",function(req,res){
 router.post('/dailymission/:money/:product', async (req, res, next) => {
   let user = Schema.user;
   let usersResult = await user.findOne({ email: User_data.loginEmail }).exec((err, userData) => {
-    mongoose.model('user').findOneAndUpdate({ email: User_data.loginEmail }, {"$set": {Money: parseInt(req.params['money']), uploaded_product: parseInt(req.params['product'])}} ,function (err, Users_Result) {
+    mongoose.model('user').findOneAndUpdate({ email: User_data.loginEmail }, { "$set": { Money: parseInt(req.params['money']), uploaded_product: parseInt(req.params['product']) } }, function (err, Users_Result) {
       if (err) {
         console.log(err);
         return;
       }
       else {
-        res.render('mission', {result: Users_Result})
+        res.render('mission', { result: Users_Result })
         console.log(Users_Result);
       }
     });
@@ -595,7 +642,7 @@ router.get('/mission', async (req, res, next) => {
         return;
       }
       else {
-        res.render('mission', {result: Users_Result, product: Users_Result.uploaded_product});
+        res.render('mission', { result: Users_Result, product: Users_Result.uploaded_product });
       }
     });
   });
@@ -606,17 +653,17 @@ router.post('/postmission/:money', async (req, res, next) => {
   console.log("sdjfbisdbfjsd");
   let user = Schema.user;
   let usersResult = await user.find({ email: User_data.loginEmail }).exec((err, userData) => {
-    mongoose.model('user').findOne({ email: User_data.loginEmail },async (err, Users_Result) =>{
+    mongoose.model('user').findOne({ email: User_data.loginEmail }, async (err, Users_Result) => {
       if (err) {
         console.log(err);
         return;
       }
       else {
         var Updated_User = new Schema.user(Users_Result);
-        Updated_User.Money=parseInt(req.params['money']);
+        Updated_User.Money = parseInt(req.params['money']);
         Updated_User.save();
-        res.render('shop/shop', { money: Users_Result.Money});
-        console.log("2,",Updated_User);
+        res.render('shop/shop', { money: Users_Result.Money });
+        console.log("2,", Updated_User);
       }
     });
   });
@@ -625,46 +672,46 @@ router.post('/postmission/:money', async (req, res, next) => {
 
 
 
-router.post("/user/changepw",async(req,res)=>{
+router.post("/user/changepw", async (req, res) => {
 
-  mongoose.model('user').findOne({ email: User_data.loginEmail }, async (err, Users_Result)=> {
+  mongoose.model('user').findOne({ email: User_data.loginEmail }, async (err, Users_Result) => {
     if (err) {
       console.log(err);
       return;
     }
     else {
-      if(req.body.OldPassword==''||req.body.NewPassword==''||req.body.Conpassword==''){
-        res.render('user/PWsetting',{money:Users_Result.Money,error:"Please fill all the blanks"});
+      if (req.body.OldPassword == '' || req.body.NewPassword == '' || req.body.Conpassword == '') {
+        res.render('user/PWsetting', { money: Users_Result.Money, error: "Please fill all the blanks" });
       }
 
       var checkPW = await bcrypt.compare(req.body.OldPassword, Users_Result.password);
-      console.log("checkPW",checkPW);
-      if(checkPW||Users_Result.password == req.body.OldPassword){
+      console.log("checkPW", checkPW);
+      if (checkPW || Users_Result.password == req.body.OldPassword) {
         const result = passwordSchema.validate(req.body);
         console.log(result);
-        if(result.error){
-          res.render('user/PWsetting',{money:Users_Result.Money,error:"Please Set A Password with length 5"});
-        }else{
-          if(req.body.NewPassword==req.body.Conpassword){
+        if (result.error) {
+          res.render('user/PWsetting', { money: Users_Result.Money, error: "Please Set A Password with length 5" });
+        } else {
+          if (req.body.NewPassword == req.body.Conpassword) {
             var Updated_User = await Schema.user.findOne({ email: User_data.loginEmail });
             const salt = await bcrypt.genSalt(9);
 
             const hash = await bcrypt.hash(req.body.NewPassword, salt);
 
-            Updated_User.password=hash;
-            console.log("changed pw",Updated_User);
+            Updated_User.password = hash;
+            console.log("changed pw", Updated_User);
             Updated_User.save();
-            res.render('user/PWsetting',{money:Users_Result.Money,error:"Done!!"});
-        }else{
-          res.render('user/PWsetting',{money:Users_Result.Money,error:"Confirm Password is incorrect!"});
+            res.render('user/PWsetting', { money: Users_Result.Money, error: "Done!!" });
+          } else {
+            res.render('user/PWsetting', { money: Users_Result.Money, error: "Confirm Password is incorrect!" });
+          }
+
+
+
         }
 
-      
-
-        }
-        
-      }else
-      res.render('user/PWsetting',{money:Users_Result.Money,error:"WrongPW!!"});
+      } else
+        res.render('user/PWsetting', { money: Users_Result.Money, error: "WrongPW!!" });
     }
   });
 });
@@ -674,7 +721,10 @@ router.post("/user/changepw",async(req,res)=>{
 
 
 
-
+// admin home page
+router.get('/admin/home', function (req, res, next) {
+  res.render('user/admin', { layout: 'adminlayout' });
+});
 
 
 
