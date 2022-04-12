@@ -1,0 +1,34 @@
+
+<div class="row">
+   {{#each data}}
+    <form action="/shop" method="post"></form>
+
+    <div class="col-sm-4 col-md-4 col-lg-4">
+            <div class="thumbnail">
+            <img src="{{this.imagePath}}" alt="..." class="img-responsive">
+            <div class="word">
+                <div class="caption">
+                <h5>  {{this.title}}</h5>
+                <p class="Author">Author: {{this.Author}}</p>
+                <p class="Owner">Owner: {{this.Owner}}</p>
+                <p class="description">{{this.description}}</p>
+
+
+                </div>
+    
+                <div class="clearfix">
+                    <div class="price pull-left">${{this.price}}</div>
+                    <a  class="btn btn-success pull-right" role="button">Button</a>
+                </div>
+               
+            </div>
+           
+
+        </div>
+    </div>
+  {{/each}}
+
+</div>
+
+    
+
