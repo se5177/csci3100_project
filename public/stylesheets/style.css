@@ -38,9 +38,11 @@ text-decoration: underline;
     border-style: solid; 
 }
 
+
 .price {
     font-weight: bold;
     font-size: 16px;
+    
 }
 
 .container{
@@ -56,7 +58,8 @@ text-decoration: underline;
 
 .word{
     background-color: #d0cbcb;
-    padding: 5px;
+    padding: 5px;   
+
 }
 
 

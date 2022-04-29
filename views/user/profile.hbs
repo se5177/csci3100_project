@@ -8,14 +8,28 @@
     </div>
     <div class="ml-3 w-100">
       <h4 class="mb-0 mt-0">{{data.Name}}</h4> <span></span>
-      <div class="p-2 mt-2 bg-primary d-flex justify-content-between rounded text-white stats">
-        <div class="d-flex flex-column"> <span class="Money">Money</span> <span class="number1">{{data.Money}}</span>
-        </div>
+
+      {{#if admin}}
+      <div style="text-align: center;" class="p-2 mt-2 bg-primary d-flex justify-content-between rounded text-white stats">
+        <div class="d-flex flex-column"> <span class="No.Product">Money</span> <span
+        class="number2">{{data.Money}}</span> </div>
         <div class="d-flex flex-column"> <span class="No.Product">No.Product</span> <span
             class="number2">{{data.No_product}}</span> </div>
         <div class="d-flex flex-column"> <span class="Uploaded">Uploaded</span> <span
             class="number3">{{data.uploaded_product}}</span> </div>
       </div>
+      {{/if}}
+
+
+
+      {{#unless admin}}
+      <div style="text-align: center;" class="p-2 mt-2 bg-primary d-flex justify-content-around rounded text-white stats">
+        <div class="d-flex flex-column"> <span class="No.Product">No.Product</span> <span
+            class="number2">{{data.No_product}}</span> </div>
+        <div class="d-flex flex-column"> <span class="Uploaded">Uploaded</span> <span
+            class="number3">{{data.uploaded_product}}</span> </div>
+      </div>
+      {{/unless}}
 {{#if check}}
       <a href="/uploadItem">
       <button style=" 
@@ -55,7 +69,7 @@
         <div class="thumbnail">
           <img src="/images/{{this.imagePath}}" alt="..." class="img-responsive">
           <div class="word">
-            <div class="caption">
+            <div style="text-align:center" class="caption">
               <h5> {{this.title}}</h5>
             </div>
           </div>
@@ -67,4 +81,39 @@
 
     </div>
   </div>
+
+  
+    <h2>Comments: </h2>
+        <div style=
+        "border: black;
+        border-style: solid ;
+        margin:0px;
+        padding:0px;
+        "class="container">
+            
+        
+    {{#each data3}}
+
+
+<div class="row"style="background-color:white ;margin:0px ;display:grid;grid-template-columns:100px 280px 500px ;border: black;
+        border-style: solid " >
+    <div style="padding:5px; margin-left: 20px;margin-right: 20px;" class = "author">{{author}} : </div>
+  <div style="padding:5px;margin-right: 20px;">    {{text}} </div>
+   <div id="time"style="padding:5px; text-align:right" >  {{created_at}}    </div> 
+
+</div>
+
+{{/each}}
+{{#unless check}}
+  <form action="/comment" method="post">
+
+<div class ="form-group" style="margin-top: 10px;">
+ 
+
+<input style=" height: 38px; width:90% ;margin-left:10px" type="text" id="comment" name="comment"  autocomplete="off">
+
+  <button style="float:right margin: right 10px; "type="submit" value ={{data.Name}} name="item" class="btn btn-primary">send</button>
+</form> 
+{{/unless}}
+</div>
 </div>

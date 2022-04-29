@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 const mongoose = require('mongoose');
 const { route, head } = require('../app.js');
-const { user } = require('../models/schemas.js');
+const { user, comment } = require('../models/schemas.js');
 var Schema = require('../models/schemas.js');
 var User_data = require('./users');
 const Joi = require('@hapi/joi');
@@ -124,12 +124,18 @@ router.post('/itempage', async (req, res) => {
             console.log("dealing");
             var Updated_User = await Schema.user.findOne({ email: User_data.loginEmail });
             var Updated_product = await Schema.products.findOne({ imagePath: temp });
+            var Updated_Owner = await Schema.user.findOne({ Name:productsData.Owner});
+            Updated_Owner.No_product--;
+            console.log("updated_user",Updated_Owner);
+            Updated_Owner.Money+=Updated_product.price;
+            Updated_User.No_product++;
             Updated_User.Money = temp_User.Money - Updated_product.price;
             Updated_product.Owner = temp_User.Name;
-
+            await Updated_Owner.save();
             await Updated_User.save();
             await Updated_product.save();
             console.log("done: ", Updated_product);
+
             res.redirect('/shop');
           } else {
             res.render('shop/item', { data: productsData, money: temp_User.Money, error: "Not Enough Money!!" });
@@ -219,7 +225,10 @@ router.get('/user', async (req, res, next) => {
                 console.log(err);
                 return;
               } else {
-                res.render('user/profile', { money: Users_Result.Money, data: Users_Result, data2: Result, check: true });
+                mongoose.model('comment').find({ to_user: Users_Result.Name }, function (err, comments){
+                  console.log("comments",comments);
+                  res.render('user/profile', { money: Users_Result.Money, data: Users_Result, data2: Result, check: true ,data3:comments});
+                });
               }
             });
           }
@@ -255,7 +264,11 @@ router.post('/admin/user', async (req, res, next) => {
                 return;
               } else {
                 console.log(User_Result)
-                res.render('user/profile', { layout: "adminlayout", money: User_Result.Money, data: Users_Result, data2: Result });
+                mongoose.model('comment').find({ to_user: Users_Result.Name }, function (err, comments){
+       
+                console.log("dsfhsb",comments)
+                res.render('user/profile', { admin:true,layout: "adminlayout", money: User_Result.Money, data: Users_Result, data2: Result ,data3:comments});
+                });
               }
             });
           }
@@ -280,51 +293,65 @@ router.get("/user/setting", async (req, res) => {
 
     console.log("image is loading");
     console.log(data);
-
-    res.render('user/usersetting', { records: data })
+    mongoose.model('user').findOne({ email: User_data.loginEmail }, function (err, User_Result) {
+      if (err) {
+        console.log(err);
+        return;
+      } else {
+        console.log("d",User_Result);
+    res.render('user/usersetting', { money: User_Result.Money,records: data })
+      }
   })
+});
 });
 
 
 router.post("/user/setting", async (req, res) => {
   console.log("request has been sent");
   console.log(req.file);
-  upload(req, res, function (err) {
+  mongoose.model('user').findOne({ email: User_data.loginEmail }, function (err, User_Result) {
     if (err) {
       console.log(err);
-      return res.end("Something went wrong");
+      return;
     } else {
-      if (req.file != null) {
-        console.log(req.file.path);
-        var imageName = req.file.filename;
-
-        var imageDetails = new imageModel({
-          imagename: imageName,
-
-        });
-
-        imageDetails.save(function (err, doc) {
-          if (err) throw err;
-
-          console.log("Image Saved");
-
-          imageModel.find({}).exec(function (err, data) {
-            if (err) throw err;
-
-
-            var Updated_User = Schema.user.findOneAndUpdate({ email: User_data.loginEmail }, { $set: { UserIMG: req.file.filename } }, async (err, Result) => {
-              if (err) throw err;
-
-              console.log(Updated_User)
+      upload(req, res, function (err) {
+        if (err) {
+          console.log(err);
+          return res.end("Something went wrong");
+        } else {
+          if (req.file != null) {
+            console.log(req.file.path);
+            var imageName = req.file.filename;
+    
+            var imageDetails = new imageModel({
+              imagename: imageName,
+    
             });
-            res.render('user/usersetting', { money: User_data.Money, records: data, success: true });
-          })
-        });
-      } else {
-        res.render('user/usersetting', { money: User_data.Money, result: true });
-      }
-    }
-  });
+    
+            imageDetails.save(function (err, doc) {
+              if (err) throw err;
+    
+              console.log("Image Saved");
+    
+              imageModel.find({}).exec(function (err, data) {
+                if (err) throw err;
+    
+    
+                var Updated_User = Schema.user.findOneAndUpdate({ email: User_data.loginEmail }, { $set: { UserIMG: req.file.filename } }, async (err, Result) => {
+                  if (err) throw err;
+    
+                  console.log(Updated_User)
+                });
+                res.render('user/usersetting', { money: User_Result.Money, records: data, success: true });
+              })
+            });
+          } else {
+            res.render('user/usersetting', { money: User_Result.Money, result: true });
+          }
+        }
+      });
+    }});
+
 });
 
 router.post("/admin/listalluser", async (req, res) => {
@@ -420,12 +447,17 @@ router.post('/user/Author', async (req, res, next) => {
               } else {
                 console.log(User_Result)
                 mongoose.model('user').findOne({ email: User_data.loginEmail }, function (err, result) {
-                  if (result.Name == req.body.name) {
-                    res.render('user/profile', { money: result.Money, data: Users_Result, data2: Result, check: true });
-                  }
-                  else {
-                    res.render('user/profile', { money: result.Money, data: Users_Result, data2: Result });
-                  }
+                  mongoose.model('comment').find({ to_user: Users_Result.Name }, function (err, comments){
+       
+                    if (result.Name == req.body.name) {
+
+                      res.render('user/profile', { money: result.Money, data: Users_Result, data2: Result, check: true ,data3:comments});
+                    }
+                    else {
+                      
+                      res.render('user/profile', { money: result.Money, data: Users_Result, data2: Result ,data3:comments});
+                    }});
+                  
                 })
               }
             });
@@ -468,14 +500,17 @@ router.post('/user/Owner', async (req, res, next) => {
               } else {
                 console.log(User_Result)
                 mongoose.model('user').findOne({ email: User_data.loginEmail }, function (err, result) {
+                  mongoose.model('comment').find({ to_user: Users_Result.Name }, function (err, comments){
+       
+                    if (result.Name == req.body.name) {
 
-                  if (result.Name == req.body.name) {
-
-                    res.render('user/profile', { money: result.Money, data: Users_Result, data2: Result, check: true });
-                  }
-                  else {
-                    res.render('user/profile', { money: result.Money, data: Users_Result, data2: Result });
-                  }
+                      res.render('user/profile', { money: result.Money, data: Users_Result, data2: Result, check: true ,data3:comments});
+                    }
+                    else {
+                      
+                      res.render('user/profile', { money: result.Money, data: Users_Result, data2: Result ,data3:comments});
+                    }                  });
+                
                 })
               }
             });
@@ -527,42 +562,50 @@ router.get("/uploadItem", function (req, res) {
 
 
 
-
 router.post("/uploadItem", async (req, res) => {
 
-  console.log("check", req.body);
-
-
-  upload(req, res, function (err) {
+  mongoose.model('user').findOne({ email: User_data.loginEmail }, function (err, Users_Result) {
     if (err) {
       console.log(err);
-      return res.end("Something went wrong");
-    } else {
-      if (req.file != null) {
-        console.log(req.file.path);
-        var imageName = req.file.filename;
-
-        var imageDetails = new imageModel({
-          imagename: imageName,
-        });
-
-        imageDetails.save(function (err, doc) {
-          if (err) throw err;
-
-          console.log("Image Saved");
-
-          imageModel.find({}).exec(function (err, data) {
-            if (err) throw err;
-
-
-            res.render('shop/uploadItem', { img: req.file.filename, success: true });
-          })
-        });
-      } else {
-        res.render('shop/uploadItem', { result: true });
-      }
+      return;
+    }else{
+      console.log("check", req.body);
+  
+  
+      upload(req, res, function (err) {
+        if (err) {
+          console.log(err);
+          return res.end("Something went wrong");
+        } else {
+          if (req.file != null) {
+            console.log(req.file.path);
+            var imageName = req.file.filename;
+    
+            var imageDetails = new imageModel({
+              imagename: imageName,
+            });
+    
+            imageDetails.save(function (err, doc) {
+              if (err) throw err;
+    
+              console.log("Image Saved");
+    
+              imageModel.find({}).exec(function (err, data) {
+                if (err) throw err;
+    
+    
+                res.render('shop/uploadItem', {  money: Users_Result.Money,img: req.file.filename, success: true });
+              })
+            });
+          } else {
+            res.render('shop/uploadItem', {  money: Users_Result.Money,result: true });
+          }``
+        }
+      });
     }
+  
   });
+
 });
 
 
@@ -577,16 +620,16 @@ router.post("/confirmed", function (req, res) {
 
   console.log("show", req.body);
   console.log("showd", typeof (req.body.item));
-
+  mongoose.model('user').findOne({ email: User_data.loginEmail }, function (err, Users_Result) {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    else {
   if (req.body.item == null || req.body.title == '' || req.body.description == '' || req.body.price == '') {
-    res.render("shop/uploadItem", { error: "Please filled every blocks!" });
+    res.render("shop/uploadItem", { error: "Please filled every blocks!" ,money:Users_Result.Money});
   } else {
-    mongoose.model('user').findOne({ email: User_data.loginEmail }, function (err, Users_Result) {
-      if (err) {
-        console.log(err);
-        return;
-      }
-      else {
+
 
         var Updated_product = new Schema.products;
         Updated_product.title = req.body.title;
@@ -596,17 +639,73 @@ router.post("/confirmed", function (req, res) {
         Updated_product.Author = Users_Result.Name;
         Updated_product.imagePath = req.body.item;
         console.log("check", Updated_product);
+        var Updated_User = new Schema.user(Users_Result);
+        Updated_User.uploaded_product++;
+        Updated_User.No_product++;
+        Updated_User.save();
         Updated_product.save();
         res.redirect('/shop');
       }
 
-    });
-  }
+  }});
+  
 });
 
 
 
+router.post("/comment",async(req,res)=>{
+  console.log(req.body);
 
+
+  mongoose.model('user').findOne({ email: User_data.loginEmail }, async (err, Users_Result)=> {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    else {
+      mongoose.model('user').findOne({ Name: req.body.item }, async (err, to_user_Result)=> {
+        if (err) {
+          console.log(err);
+          return;
+        }
+        else {
+      var new_comment = new Schema.comment;
+
+      new_comment.to_user=req.body.item,
+      new_comment.text= req.body.comment;
+      new_comment.author = Users_Result.Name;
+      var time= new Date();
+          if (time.getMinutes()<10){
+            var mins = "0"+time.getMinutes();
+          }
+          else
+          var mins = time.getMinutes();
+
+      var result_time = time.getHours()+":"+mins+"  "+time.getDay() +"/"+time.getMonth() +"/"+time.getFullYear() ;
+      console.log("result",result_time);
+
+      new_comment.created_at=result_time;
+      console.log("uploaded",new_comment);    
+      await new_comment.save();
+      mongoose.model('products').find({ Owner: req.body.item}, function (err, Result) {
+        if (err) {
+          console.log(err)
+          return;
+        }
+        else {
+          mongoose.model('comment').find({ to_user: to_user_Result.Name }, function (err, comments){
+            console.log("comments",comments);
+            res.render('user/profile', { money: Users_Result.Money, data: to_user_Result, data2: Result ,data3:comments});
+          });
+  
+        }});
+    }
+      });
+    }
+  });
+
+
+});
 
 
 
@@ -661,7 +760,7 @@ router.post('/postmission/:money', async (req, res, next) => {
       else {
         var Updated_User = new Schema.user(Users_Result);
         Updated_User.Money = parseInt(req.params['money']);
-        Updated_User.save();
+        await Updated_User.save();
         res.render('shop/shop', { money: Users_Result.Money });
         console.log("2,", Updated_User);
       }

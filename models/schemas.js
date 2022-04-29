@@ -40,6 +40,15 @@ var AdminSchema = new Schema({
 
 });
 
+var CommentSchema = new Schema (
+    {
+        author: {type: String, required: true },
+        to_user: {type: String, required: true},
+        text: {type: String, required: true},
+        created_at: {type:String}
+  
+    }
+);
 
 var tokenSchema = new Schema({
     _userId: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
@@ -50,7 +59,8 @@ var tokenSchema = new Schema({
 let products = mongoose.model('products',ProductSchema,'products');
 let users = mongoose.model('user',UserSchema,'user');
 let admin = mongoose.model('admin', AdminSchema, 'admin');
-let DBSchema = { 'products': products, 'user': users, 'admin': admin };
+let comment = mongoose.model('comment', CommentSchema, 'comment');
+let DBSchema = { 'products': products, 'user': users, 'admin': admin, 'comment': comment };
 module.exports = DBSchema;
 
 module.exports.hashPassword = async (password) =>{
