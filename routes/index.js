@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 const mongoose = require('mongoose');
-const { route, head } = require('../app.js');
+
 const { user, comment } = require('../models/schemas.js');
 var Schema = require('../models/schemas.js');
 var User_data = require('./users');
@@ -19,6 +19,7 @@ const multer = require("multer");
 //new
 const imageModel = require("../models/upload");
 const { schema } = require('../models/upload');
+const { boolean } = require('joi');
 //new
 
 router.use(express.static("/public/images"));
@@ -51,6 +52,7 @@ global.temp = "";
 
 /* GET home page. */
 router.get('/shop', async (req, res, next) => {
+
   let products = Schema.products;
   let productsResult = await products.find({}).exec((err, productsData) => {
     if (productsData) {
@@ -65,6 +67,10 @@ router.get('/shop', async (req, res, next) => {
           console.log(err);
           return;
         } else {
+   //New__3/5/2022
+          if(Users_Result==null){
+            res.redirect('/users/login');
+          }else
           res.render('shop/shop', { money: Users_Result.Money, data: productsData });
         }
       });
@@ -77,11 +83,10 @@ router.get('/shop', async (req, res, next) => {
 // Added the home page for the main site before login
 router.get('/', async (req, res, next) => {
   console.log('homepage');
-  res.render('user/homepage', { layout: 'login' })
+  res.render('user/homepage', { layout: 'login' });
 
 });
 //----------------------------------------------------
-
 
 
 
@@ -95,6 +100,14 @@ router.post('/shop', function (req, res) {
 });
 
 
+
+
+router.post('/clean', function (req, res) {
+
+
+  console.log("dllmlmlmlmlmlml:");
+
+});
 
 
 
@@ -161,7 +174,6 @@ router.post('/itempage', async (req, res) => {
 
 router.get('/itempage', async (req, res, next) => {
 
-
   mongoose.model('products').findOne({ imagePath: temp }).exec((err, productsData) => {
 
     if (err) {
@@ -175,7 +187,9 @@ router.get('/itempage', async (req, res, next) => {
         console.log(err);
         return;
       } else {
-
+        if(Users_Result==null){
+          res.redirect('/users/login');
+        }else
         res.render('shop/item', { money: Users_Result.Money, data: productsData, error: null });
       }
     });
@@ -206,6 +220,10 @@ router.get('/itempage', async (req, res, next) => {
 
 router.get('/user', async (req, res, next) => {
   let user = Schema.user;
+  if(User_data.loginEmail==undefined){
+    res.redirect('/users/login');
+    return;
+  }
   let usersResult = await user.findOne({ email: User_data.loginEmail }).exec((err, userData) => {
     mongoose.model('user').find({ email: User_data.loginEmail }, function (err, Users_Result) {
       if (err) {
@@ -213,7 +231,6 @@ router.get('/user', async (req, res, next) => {
         return;
       }
       else {
-
         mongoose.model('products').find({ Owner: Users_Result[0].Name }, function (err, Result) {
           if (err) {
             console.log(err)
@@ -291,16 +308,24 @@ router.get("/user/setting", async (req, res) => {
   let imageresult = await imageModel.find({}).exec(function (err, data) {
     if (err) throw err;
 
-    console.log("image is loading");
-    console.log(data);
+    //New__3/5/2022
+
     mongoose.model('user').findOne({ email: User_data.loginEmail }, function (err, User_Result) {
       if (err) {
         console.log(err);
         return;
       } else {
-        console.log("d",User_Result);
-    res.render('user/usersetting', { money: User_Result.Money,records: data })
-      }
+        if(User_data.loginEmail==undefined){
+          res.redirect('/users/login');
+          return;
+        }  else{
+          if(User_Result==null){
+            res.redirect('/users/login');
+          }else
+             res.render('user/usersetting', { money: User_Result.Money,records: data })
+        }
+        }
+        
   })
 });
 });
@@ -309,7 +334,13 @@ router.get("/user/setting", async (req, res) => {
 router.post("/user/setting", async (req, res) => {
   console.log("request has been sent");
   console.log(req.file);
+  console.log("chccc",User_data.loginEmail);
   mongoose.model('user').findOne({ email: User_data.loginEmail }, function (err, User_Result) {
+ //New__3/5/2022
+ if(Users_Result==null){
+  res.redirect('/users/login');
+  return;
+}
     if (err) {
       console.log(err);
       return;
@@ -367,59 +398,67 @@ router.post("/admin/listalluser", async (req, res) => {
 
 
 
+
 // Newly added admin reset password funcitonality
 
 router.post('/admin/resetpassword', async (req, res) => {
-  console.log(req.body.email);
+  console.log("req.body.email", req.body.email);
+  if (req.body.email == "") {
 
-  mongoose
-    .model('user')
-    .findOne({ email: req.body.email }, async (err, Users_Result) => {
-      console.log(Users_Result);
-      if (err) {
-        console.log(err);
-        return res.redirect('/admin/resetpassword');
-      } else {
-        if (Users_Result == null) {
-          console.log('User not found');
-          res.render('user/adminresetpassword', {
-            layout: 'adminlayout',
-            error: 'User not found',
-          });
-        } else {
-          var newPassword =
-            Math.random().toString(36).slice(2) +
-            Math.random().toString(36).toUpperCase().slice(2);
-
-          const message = `Hi there,<br/> Your Password has been changed <br/> Password: <b>${newPassword}</b>`;
-          console.log(Users_Result.email);
-
-          await mailer.sendEmail(
-            '1155137891@link.cuhk.edu.hk',
-            Users_Result.email,
-            'Your password has been updated',
-            message
-          );
-
-          const hash = await Schema.hashPassword(newPassword);
-          Users_Result.password = hash;
-          var updateUser = await Schema.user.findOne({
-            email: Users_Result.email,
-          });
-
-          updateUser.password = hash;
-          await updateUser.save();
-
-          res.render('user/adminresetpassword', {
-            success: true,
-            layout: 'adminlayout',
-          });
-
-          console.log(newPassword);
-          console.log(hash);
-        }
-      }
+    res.render('user/adminresetpassword', {
+      layout: 'adminlayout',
+      error: 'Please Enter User Email',
     });
+  } else {
+    mongoose
+      .model('user')
+      .findOne({ email: req.body.email }, async (err, Users_Result) => {
+        console.log(Users_Result);
+        if (err) {
+          console.log(err);
+          return res.redirect('/admin/resetpassword');
+        } else {
+          if (Users_Result == null) {
+            console.log('User not found');
+            res.render('user/adminresetpassword', {
+              layout: 'adminlayout',
+              error: 'User not found',
+            });
+          } else {
+            var newPassword =
+              Math.random().toString(36).slice(2) +
+              Math.random().toString(36).toUpperCase().slice(2);
+
+            const message = `Hi there,<br/> Your Password has been changed <br/> Password: <b>${newPassword}</b>`;
+            console.log(Users_Result.email);
+
+            await mailer.sendEmail(
+              '1155137891@link.cuhk.edu.hk',
+              Users_Result.email,
+              'Your password has been updated',
+              message
+            );
+
+            const hash = await Schema.hashPassword(newPassword);
+            Users_Result.password = hash;
+            var updateUser = await Schema.user.findOne({
+              email: Users_Result.email,
+            });
+
+            updateUser.password = hash;
+            await updateUser.save();
+
+            res.render('user/adminresetpassword', {
+              success: true,
+              layout: 'adminlayout',
+            });
+
+            console.log(newPassword);
+            console.log(hash);
+          }
+        }
+      });
+  }
 });
 // -------------------------------------------------------------------------------
 
@@ -531,11 +570,16 @@ router.post('/user/Owner', async (req, res, next) => {
 
 router.get("/user/changepw", async (req, res) => {
   mongoose.model('user').findOne({ email: User_data.loginEmail }, function (err, Users_Result) {
+    if(Users_Result==null){
+      res.redirect('/users/login');
+      return;
+    }
     if (err) {
       console.log(err);
       return;
     }
     else {
+
       console.log(Users_Result.Money);
       res.render('user/PWsetting', { money: Users_Result.Money });
     }
@@ -629,8 +673,11 @@ router.post("/confirmed", function (req, res) {
   if (req.body.item == null || req.body.title == '' || req.body.description == '' || req.body.price == '') {
     res.render("shop/uploadItem", { error: "Please filled every blocks!" ,money:Users_Result.Money});
   } else {
-
-
+       if(req.body.price<=0){
+         //New__3/5/2022
+        res.render("shop/uploadItem", { error: "Price must be larger 0" ,money:Users_Result.Money})
+        return;
+      }
         var Updated_product = new Schema.products;
         Updated_product.title = req.body.title;
         Updated_product.description = req.body.description;

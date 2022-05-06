@@ -23,7 +23,6 @@ mongoose.connect(process.env.DB_URL,{useNewUrlParser:true, useUnifiedTopology:tr
 })
 .catch((err)=>{
   console.log(err);
- 
     return res.sendStatus(500);
 });
 
@@ -33,7 +32,7 @@ app.engine('hbs',engine({defaultLayout:'layout',extname:'.hbs',layoutsDir:'views
 
 
 app.get('/users/login', (req, res) => {
-  res.render('user/login', {layout: 'login'}) 
+  res.render('user/login', {layout: 'login'})
 })
 
 hbs.registerPartials(path.join(__dirname,'views/partials'),(err)=>{})
@@ -71,8 +70,8 @@ app.use(function(err, req, res, next) {
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
   // render the error page
-  return res.status(err.status || 500);
-  res.render('error');
+  res.status(err.status || 500);
+  res.render('error',layout="error");
   
 });
 
